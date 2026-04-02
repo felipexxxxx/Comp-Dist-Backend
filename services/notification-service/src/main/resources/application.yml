@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:healthsys}
+    password: ${SPRING_RABBITMQ_PASSWORD:healthsys}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${SERVER_PORT:8083}
+
+app:
+  messaging:
+    exchange: ${APP_MESSAGING_EXCHANGE:healthsys.events}
+    queue: ${APP_MESSAGING_QUEUE:healthsys.notifications}
+    routing-key: ${APP_MESSAGING_ROUTING_KEY:healthsys.#}

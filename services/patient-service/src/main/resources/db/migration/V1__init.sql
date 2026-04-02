@@ -1,0 +1,10 @@
+CREATE TABLE patients (
+    id UUID PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    birth_date DATE NOT NULL,
+    sex VARCHAR(20) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);

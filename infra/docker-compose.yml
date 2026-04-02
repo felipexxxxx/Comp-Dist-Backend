@@ -1,0 +1,127 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: healthsys-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: healthsys-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: healthsys
+      RABBITMQ_DEFAULT_PASS: healthsys
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  identity-service:
+    build:
+      context: ..
+      dockerfile: services/identity-service/Dockerfile
+    container_name: healthsys-identity-service
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/healthsys_identity
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: healthsys
+      SPRING_RABBITMQ_PASSWORD: healthsys
+      JWT_SECRET: change-this-shared-secret-for-dev-only
+      BOOTSTRAP_ADMIN_EMAIL: admin@healthsys.local
+      BOOTSTRAP_ADMIN_PASSWORD: Admin@123
+      BOOTSTRAP_ADMIN_NAME: Administrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  patient-service:
+    build:
+      context: ..
+      dockerfile: services/patient-service/Dockerfile
+    container_name: healthsys-patient-service
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/healthsys_patient
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: healthsys
+      SPRING_RABBITMQ_PASSWORD: healthsys
+      JWT_SECRET: change-this-shared-secret-for-dev-only
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
+    container_name: healthsys-notification-service
+    environment:
+      SERVER_PORT: 8083
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: healthsys
+      SPRING_RABBITMQ_PASSWORD: healthsys
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: healthsys-api-gateway
+    environment:
+      SERVER_PORT: 8080
+      IDENTITY_SERVICE_URL: http://identity-service:8081
+      PATIENT_SERVICE_URL: http://patient-service:8082
+    ports:
+      - "8080:8080"
+    depends_on:
+      identity-service:
+        condition: service_started
+      patient-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ../../Comp-Dist-Fronted
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+        VITE_USE_MOCK_API: "false"
+    container_name: healthsys-frontend
+    ports:
+      - "4173:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  postgres_data:

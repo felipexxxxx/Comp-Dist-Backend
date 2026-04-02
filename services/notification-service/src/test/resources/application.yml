@@ -1,0 +1,11 @@
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+app:
+  messaging:
+    exchange: healthsys.events
+    queue: healthsys.notifications
+    routing-key: healthsys.#

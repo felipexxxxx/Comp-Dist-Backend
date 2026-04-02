@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:identitydb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+jwt:
+  secret: test-secret-key-with-sufficient-length-123456
+  expiration-minutes: 60
+
+app:
+  bootstrap:
+    admin-email: admin@healthsys.local
+    admin-password: Admin@123
+    admin-name: Administrator
+  messaging:
+    exchange: healthsys.events

@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: identity-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/healthsys_identity}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:healthsys}
+    password: ${SPRING_RABBITMQ_PASSWORD:healthsys}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${SERVER_PORT:8081}
+
+jwt:
+  secret: ${JWT_SECRET:change-this-shared-secret-for-dev-only}
+  expiration-minutes: ${JWT_EXPIRATION_MINUTES:240}
+
+app:
+  bootstrap:
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:admin@healthsys.local}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:Admin@123}
+    admin-name: ${BOOTSTRAP_ADMIN_NAME:Administrator}
+  messaging:
+    exchange: ${APP_MESSAGING_EXCHANGE:healthsys.events}
