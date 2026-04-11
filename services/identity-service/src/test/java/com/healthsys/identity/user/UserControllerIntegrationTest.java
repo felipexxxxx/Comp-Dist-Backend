@@ -1,6 +1,8 @@
 package com.healthsys.identity.user;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,6 +46,15 @@ class UserControllerIntegrationTest {
             .andExpect(jsonPath("$.email").value("recepcao@healthsys.local"))
             .andExpect(jsonPath("$.role").value("RECEPTIONIST"))
             .andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void shouldListUsersWhenAdminAuthorized() throws Exception {
+        mockMvc.perform(get("/api/users")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                    .jwt(jwt -> jwt.claim("roles", List.of("ADMIN")))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[*].email", hasItem("admin@healthsys.local")));
     }
 
     @Test
