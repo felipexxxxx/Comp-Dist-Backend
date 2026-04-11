@@ -1,5 +1,7 @@
 package com.healthsys.identity.config;
 
+import com.healthsys.identity.auth.revocation.JwtRevocationValidator;
+import com.healthsys.identity.auth.revocation.TokenRevocationService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.nio.charset.StandardCharsets;
@@ -10,9 +12,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -33,10 +38,17 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
-        return NimbusJwtDecoder.withSecretKey(jwtSecretKey)
+    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, TokenRevocationService tokenRevocationService) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
             .macAlgorithm(MacAlgorithm.HS256)
             .build();
+
+        OAuth2TokenValidator<Jwt> validators = new DelegatingOAuth2TokenValidator<>(
+            JwtValidators.createDefault(),
+            new JwtRevocationValidator(tokenRevocationService)
+        );
+        jwtDecoder.setJwtValidator(validators);
+        return jwtDecoder;
     }
 
     @Bean

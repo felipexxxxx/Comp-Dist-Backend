@@ -32,4 +32,19 @@ public class IdentityEventPublisher {
 
         rabbitTemplate.convertAndSend(messagingProperties.getExchange(), "healthsys.user.created", payload);
     }
+
+    public void publishTokenRevoked(String userId, String tokenId, Instant expiresAt) {
+        Map<String, Object> payload = Map.of(
+            "eventType", "TOKEN_REVOKED",
+            "resourceId", userId,
+            "occurredAt", Instant.now().toString(),
+            "payload", Map.of(
+                "userId", userId,
+                "tokenId", tokenId,
+                "expiresAt", expiresAt.toString()
+            )
+        );
+
+        rabbitTemplate.convertAndSend(messagingProperties.getExchange(), "healthsys.auth.token-revoked", payload);
+    }
 }

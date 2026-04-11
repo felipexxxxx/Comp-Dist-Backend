@@ -3,7 +3,10 @@ package com.healthsys.identity.auth.service;
 import com.healthsys.identity.auth.dto.AuthResponse;
 import com.healthsys.identity.auth.dto.LoginRequest;
 import com.healthsys.identity.auth.dto.MeResponse;
+import com.healthsys.identity.auth.dto.LogoutResponse;
+import com.healthsys.identity.auth.revocation.TokenRevocationService;
 import com.healthsys.identity.config.JwtProperties;
+import com.healthsys.identity.messaging.IdentityEventPublisher;
 import com.healthsys.identity.user.domain.UserAccount;
 import com.healthsys.identity.user.domain.UserRole;
 import com.healthsys.identity.user.dto.UserResponse;
@@ -31,19 +34,25 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtProperties jwtProperties;
+    private final TokenRevocationService tokenRevocationService;
+    private final IdentityEventPublisher identityEventPublisher;
 
     public AuthService(
         UserRepository userRepository,
         UserService userService,
         PasswordEncoder passwordEncoder,
         JwtEncoder jwtEncoder,
-        JwtProperties jwtProperties
+        JwtProperties jwtProperties,
+        TokenRevocationService tokenRevocationService,
+        IdentityEventPublisher identityEventPublisher
     ) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.jwtProperties = jwtProperties;
+        this.tokenRevocationService = tokenRevocationService;
+        this.identityEventPublisher = identityEventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -59,8 +68,10 @@ public class AuthService {
 
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(jwtProperties.getExpirationMinutes(), ChronoUnit.MINUTES);
+        UUID tokenId = UUID.randomUUID();
 
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
+            .id(tokenId.toString())
             .issuer("healthsys-identity")
             .issuedAt(issuedAt)
             .expiresAt(expiresAt)
@@ -77,6 +88,18 @@ public class AuthService {
 
         UserResponse userResponse = userService.toResponse(userAccount);
         return new AuthResponse(token, "Bearer", expiresAt, userResponse);
+    }
+
+    @Transactional
+    public LogoutResponse logout(Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        UUID tokenId = UUID.fromString(jwt.getId());
+        Instant expiresAt = jwt.getExpiresAt();
+
+        tokenRevocationService.revokeToken(tokenId, userId, expiresAt);
+        identityEventPublisher.publishTokenRevoked(userId.toString(), tokenId.toString(), expiresAt);
+
+        return new LogoutResponse("Logout completed and token revoked.");
     }
 
     public MeResponse me(Jwt jwt) {

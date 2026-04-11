@@ -38,7 +38,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.OK)
-    public LogoutResponse logout() {
-        return new LogoutResponse("Logout handled client-side by discarding the JWT.");
+    public LogoutResponse logout(@AuthenticationPrincipal Jwt jwt) {
+        return authService.logout(jwt);
     }
 }
