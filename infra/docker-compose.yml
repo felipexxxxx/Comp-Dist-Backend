@@ -17,6 +17,19 @@ services:
       timeout: 5s
       retries: 10
 
+  postgres-init:
+    image: postgres:16-alpine
+    container_name: healthsys-postgres-init
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    command: >
+      sh -c "psql -h postgres -U postgres -d postgres -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/01-create-databases.sql"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: healthsys-rabbitmq
@@ -62,8 +75,8 @@ services:
       BOOTSTRAP_ADMIN_PASSWORD: Admin@123
       BOOTSTRAP_ADMIN_NAME: Administrator
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
 
@@ -85,8 +98,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       JWT_SECRET: change-this-shared-secret-for-dev-only
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
       redis:
@@ -108,8 +121,8 @@ services:
       SPRING_RABBITMQ_PASSWORD: healthsys
       JWT_SECRET: change-this-shared-secret-for-dev-only
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
 
@@ -129,8 +142,8 @@ services:
       SPRING_RABBITMQ_PASSWORD: healthsys
       JWT_SECRET: change-this-shared-secret-for-dev-only
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
 
