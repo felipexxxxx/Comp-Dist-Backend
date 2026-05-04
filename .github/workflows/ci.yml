@@ -51,7 +51,9 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: ./mvnw -B verify
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/healthsys_identity
           SPRING_RABBITMQ_HOST: localhost
