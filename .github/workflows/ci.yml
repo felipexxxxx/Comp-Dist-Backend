@@ -56,6 +56,8 @@ jobs:
           ./mvnw -B verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/healthsys_identity
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
           SPRING_RABBITMQ_HOST: localhost
           SPRING_RABBITMQ_USERNAME: healthsys
           SPRING_RABBITMQ_PASSWORD: healthsys
