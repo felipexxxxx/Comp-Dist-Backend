@@ -1,16 +1,14 @@
 spring:
-  cache:
-    type: simple
   datasource:
-    url: jdbc:h2:mem:patientdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:mem:triagedb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     open-in-view: false
   flyway:
-    enabled: true
+    enabled: false
   rabbitmq:
     host: localhost
     port: 5672
@@ -21,10 +19,13 @@ spring:
         auto-startup: false
 
 jwt:
-  secret: test-secret-key-with-sufficient-length-123456
+  secret: test-secret-key-for-testing-purposes-only-32ch
 
 app:
   messaging:
     exchange: healthsys.events
-    auth-logout-queue: healthsys.patient.auth-token-revoked
+    auth-logout-queue: healthsys.triage.auth-token-revoked
     auth-logout-routing-key: healthsys.auth.token-revoked
+
+anthropic:
+  api-key: ""
